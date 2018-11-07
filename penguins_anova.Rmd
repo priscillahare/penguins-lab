@@ -47,3 +47,69 @@ penguins2 <- penguins %>%
 
 ```
 
+Exploratory graph and Levene's test for equal variances
+
+```{r}
+
+hists <- ggplot(penguins2, aes(x = flipper_length)) +
+  geom_histogram(aes(fill = common_name)) +
+  facet_wrap(~common_name, scale = "free")
+
+hists
+
+qq <- ggplot(penguins2, aes(sample = flipper_length)) +
+  geom_qq(aes(color = common_name)) +
+  facet_wrap(~common_name, scale = "free")
+
+qq
+
+# Based on qq plots and histograms, observations for each group appear normally distrubuted, also n>30 for all groups so means will be normally distributed by central limit theorem
+
+```
+
+Evaluate variances and perform a Levene's test for equal variances
+```{r}
+# If the largest sample variances is < 4x greater than the smallest samople variance, then these are close enough to consider variances equal
+
+variances <- penguins2 %>% 
+  group_by(common_name) %>% 
+  summarize(
+    variance = var(flipper_length)
+  )
+
+variances #the largest variance (33.1) is definitely not more than 4x greater than smallest variacne (15.2)
+
+#formal hypothesis test for equal variances - Levenes test
+# leveneTest() function in the 'car' package
+levene_penguin <- leveneTest(flipper_length ~ common_name, data = penguins2)
+
+levene_penguin
+
+#H0: no difference in variacnes
+#HA: difference in variances
+
+#This would make us conclude that there is no significant in variances across species
+
+```
+
+One-way ANOVA for penguin flipper lengths ny species (common_name)
+```{r}
+
+#H0: means across all groups are equal
+#HA: at least 2 means differ
+
+penguin_aov <- aov(flipper_length ~ common_name, data = penguins2)
+
+summary(penguin_aov)
+
+#Post-hoc testing by Tukey's HSD
+#H0: there is no significant difference in pair wise means
+#HA: there is a significant difference in pair wise means
+penguin_post <- TukeyHSD(penguin_aov)
+penguin_post
+
+```
+
+Mean flipper lengths of female penguins differed significantly for all species studied (one-way anova, F(df) = statistic, p <0.001, $\alpha$ = 0.05 with a post-hoc Tukey's HSD, $\alpha$ = 0.05)
+
+#cannot do inline referencing with aov
